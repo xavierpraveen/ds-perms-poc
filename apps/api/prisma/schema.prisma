@@ -1,0 +1,183 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────
+// User (Clerk-backed, userId is Clerk's sub)
+// ─────────────────────────────────────────
+model User {
+  id        String   @id // Clerk userId e.g. "user_2abc..."
+  createdAt DateTime @default(now())
+
+  modules Module[]
+  apiKeys ApiKey[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// Dynamic Module
+// ─────────────────────────────────────────
+model Module {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String
+  name        String
+  slug        String
+  description String?
+  environment Environment @default(PRODUCTION)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fields      ModuleField[]
+  permissions ApiKeyModulePermission[]
+  records     ModuleRecord[]
+
+  @@unique([userId, slug])
+  @@index([userId, environment])
+  @@map("modules")
+}
+
+// ─────────────────────────────────────────
+// Module Field (schema definition)
+// ─────────────────────────────────────────
+model ModuleField {
+  id          String    @id @default(uuid()) @db.Uuid
+  moduleId    String    @db.Uuid
+  name        String
+  type        FieldType
+  required    Boolean   @default(false)
+  sensitive   Boolean   @default(false)
+  description String?
+  order       Int       @default(0)
+
+  module     Module                  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  fieldPerms ApiKeyFieldPermission[]
+
+  @@index([moduleId])
+  @@map("module_fields")
+}
+
+// ─────────────────────────────────────────
+// Module Record (actual data)
+// ─────────────────────────────────────────
+model ModuleRecord {
+  id        String   @id @default(uuid()) @db.Uuid
+  moduleId  String   @db.Uuid
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([moduleId, createdAt])
+  @@map("module_records")
+}
+
+// ─────────────────────────────────────────
+// API Key
+// ─────────────────────────────────────────
+model ApiKey {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String
+  name        String
+  keyPrefix   String // first ~15 chars for display
+  keyHash     String      @unique // SHA256 hash of full key
+  environment Environment @default(PRODUCTION)
+  active      Boolean     @default(true)
+  lastUsedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  expiresAt   DateTime?
+
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  modulePerms ApiKeyModulePermission[]
+  fieldPerms  ApiKeyFieldPermission[]
+  logs        RequestLog[]
+
+  @@index([keyHash])
+  @@index([userId])
+  @@map("api_keys")
+}
+
+// ─────────────────────────────────────────
+// API Key → Module Permission (CRUD flags)
+// ─────────────────────────────────────────
+model ApiKeyModulePermission {
+  id        String  @id @default(uuid()) @db.Uuid
+  apiKeyId  String  @db.Uuid
+  moduleId  String  @db.Uuid
+  canRead   Boolean @default(false)
+  canCreate Boolean @default(false)
+  canUpdate Boolean @default(false)
+  canDelete Boolean @default(false)
+
+  apiKey ApiKey  @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  module Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([apiKeyId, moduleId])
+  @@map("api_key_module_permissions")
+}
+
+// ─────────────────────────────────────────
+// API Key → Field Permission (allowlist)
+// ─────────────────────────────────────────
+model ApiKeyFieldPermission {
+  id            String  @id @default(uuid()) @db.Uuid
+  apiKeyId      String  @db.Uuid
+  moduleFieldId String  @db.Uuid
+  allowed       Boolean @default(true) // presence = allowed (allowlist model)
+
+  apiKey      ApiKey      @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  moduleField ModuleField @relation(fields: [moduleFieldId], references: [id], onDelete: Cascade)
+
+  @@unique([apiKeyId, moduleFieldId])
+  @@map("api_key_field_permissions")
+}
+
+// ─────────────────────────────────────────
+// Request Log
+// ─────────────────────────────────────────
+model RequestLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  apiKeyId       String   @db.Uuid
+  method         String
+  endpoint       String
+  statusCode     Int
+  latencyMs      Int
+  requestPayload Json?
+  responseBody   Json?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, createdAt])
+  @@index([createdAt])
+  @@map("request_logs")
+}
+
+// ─────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────
+enum Environment {
+  PRODUCTION
+  SANDBOX
+}
+
+enum FieldType {
+  STRING
+  NUMBER
+  BOOLEAN
+  DATE
+  JSON
+  ARRAY
+}
