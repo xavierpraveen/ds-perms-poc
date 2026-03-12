@@ -1,5 +1,7 @@
 import { PrismaClient, Environment, FieldType } from '@prisma/client';
 
+type SeedField = { name: string; type: FieldType; required?: boolean; sensitive?: boolean };
+
 const prisma = new PrismaClient();
 
 // Fake data helpers
@@ -411,7 +413,7 @@ async function main() {
           description: mod.description,
           environment: Environment.PRODUCTION,
           fields: {
-            create: mod.fields.map((f, i) => ({
+            create: (mod.fields as SeedField[]).map((f, i) => ({
               name: f.name,
               type: f.type,
               required: f.required ?? false,
