@@ -1,24 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Card,
-  Input,
-  Select,
-  Button,
-  Space,
-  Typography,
-  Segmented,
-  Tabs,
-  Alert,
-} from 'antd';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCreateModule } from '@/hooks/useModules';
 import ModuleFieldBuilder from '@/components/modules/ModuleFieldBuilder';
 import type { CreateModuleFieldDto, FieldType, Environment } from '@dmds/types';
-
-const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 function fieldsToJson(fields: CreateModuleFieldDto[]): string {
   const schema: Record<string, unknown> = {
@@ -104,91 +103,116 @@ export default function NewModulePage() {
     router.push('/dashboard/modules');
   };
 
-  const tabItems = [
-    {
-      key: 'visual',
-      label: '🎨 Visual Builder',
-      children: (
-        <ModuleFieldBuilder fields={fields} onChange={setFields} />
-      ),
-    },
-    {
-      key: 'json',
-      label: '{ } Raw JSON',
-      children: (
-        <Space direction="vertical" style={{ width: '100%' }}>
-          {jsonError && <Alert type="warning" message={jsonError} />}
-          <TextArea
-            value={jsonValue}
-            onChange={(e) => handleJsonChange(e.target.value)}
-            rows={20}
-            style={{ fontFamily: 'monospace', fontSize: 13 }}
-          />
-        </Space>
-      ),
-    },
-  ];
-
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24 }}>
-        <Title level={3} style={{ margin: 0 }}>Create Module</Title>
-        <Text type="secondary">Define a new dynamic data module with a custom schema</Text>
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Create Module</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Define a new dynamic data module with a custom schema
+        </p>
       </div>
 
-      <Card style={{ marginBottom: 16 }}>
-        <Space direction="vertical" style={{ width: '100%' }} size={16}>
-          <div>
-            <Text strong style={{ display: 'block', marginBottom: 6 }}>Module Name</Text>
-            <Input
-              placeholder="e.g. Customers, Products, Orders"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              size="large"
-            />
+      {/* Module metadata */}
+      <Card className="mb-4">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Module Name</label>
+              <Input
+                placeholder="e.g. Customers, Products, Orders"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="text-base"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Description <span className="font-normal text-muted-foreground">(optional)</span></label>
+              <Input
+                placeholder="What does this module store?"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Environment</label>
+              <Select
+                value={environment}
+                onValueChange={(val) => setEnvironment(val as Environment)}
+              >
+                <SelectTrigger className="w-52">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PRODUCTION">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-green-500" />
+                      Production
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="SANDBOX">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                      Sandbox
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div>
-            <Text strong style={{ display: 'block', marginBottom: 6 }}>Description (optional)</Text>
-            <Input
-              placeholder="What does this module store?"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div>
-            <Text strong style={{ display: 'block', marginBottom: 6 }}>Environment</Text>
-            <Segmented
-              value={environment}
-              onChange={(val) => setEnvironment(val as Environment)}
-              options={[
-                { label: '🟢 Production', value: 'PRODUCTION' },
-                { label: '🔵 Sandbox', value: 'SANDBOX' },
-              ]}
-            />
-          </div>
-        </Space>
+        </CardContent>
       </Card>
 
-      <Card title="Schema Fields" style={{ marginBottom: 24 }}>
-        <Tabs
-          activeKey={activeTab}
-          onChange={handleTabChange}
-          items={tabItems}
-        />
+      {/* Schema fields */}
+      <Card className="mb-6">
+        <CardHeader className="pb-0">
+          <CardTitle className="text-base">Schema Fields</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="visual">Visual Builder</TabsTrigger>
+              <TabsTrigger value="json">Raw JSON</TabsTrigger>
+            </TabsList>
+            <TabsContent value="visual">
+              <ModuleFieldBuilder fields={fields} onChange={setFields} />
+            </TabsContent>
+            <TabsContent value="json">
+              <div className="space-y-3">
+                {jsonError && (
+                  <Alert variant="warning">
+                    <AlertDescription>{jsonError}</AlertDescription>
+                  </Alert>
+                )}
+                <Textarea
+                  value={jsonValue}
+                  onChange={(e) => handleJsonChange(e.target.value)}
+                  rows={20}
+                  className="font-mono text-[13px]"
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
       </Card>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Space>
-          <Button onClick={() => router.back()}>Cancel</Button>
-          <Button
-            type="primary"
-            onClick={handleSave}
-            loading={createModule.isPending}
-            disabled={!name.trim()}
-          >
-            Create Module
-          </Button>
-        </Space>
+      {/* Actions */}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => router.back()}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={!name.trim() || createModule.isPending}
+        >
+          {createModule.isPending ? (
+            <span className="flex items-center gap-2">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Creating…
+            </span>
+          ) : (
+            'Create Module'
+          )}
+        </Button>
       </div>
     </div>
   );

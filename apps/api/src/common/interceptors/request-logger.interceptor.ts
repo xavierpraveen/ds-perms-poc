@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ApiKey } from '@prisma/client';
+import { ApiKey, Prisma } from '@prisma/client';
 
 @Injectable()
 export class RequestLoggerInterceptor implements NestInterceptor {
@@ -44,7 +44,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
               ...logEntry,
               statusCode: context.switchToHttp().getResponse().statusCode || 200,
               latencyMs,
-              responseBody: responseBody as Record<string, unknown>,
+              responseBody: responseBody as Prisma.InputJsonValue,
             },
           })
           .catch((err) => this.logger.error(`Failed to write request log: ${err}`));

@@ -23,13 +23,13 @@ export class ModulesController {
   constructor(private readonly modulesService: ModulesService) {}
 
   @Get()
-  findAll(@CurrentUser() userId: string, @Query('environment') environment?: Environment) {
-    return this.modulesService.findAll(userId, environment);
+  findAll(@Query('environment') environment?: Environment) {
+    return this.modulesService.findAll(environment);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() userId: string) {
-    return this.modulesService.findOne(id, userId);
+  findOne(@Param('id') id: string) {
+    return this.modulesService.findOne(id);
   }
 
   @Post()
@@ -38,13 +38,13 @@ export class ModulesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @CurrentUser() userId: string, @Body() dto: UpdateModuleDto) {
-    return this.modulesService.update(id, userId, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateModuleDto) {
+    return this.modulesService.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser() userId: string) {
-    return this.modulesService.remove(id, userId);
+  remove(@Param('id') id: string) {
+    return this.modulesService.remove(id);
   }
 
   // ─── Field routes ─────────────────────────────────────────────────────────
@@ -52,37 +52,33 @@ export class ModulesController {
   @Post(':id/fields')
   addField(
     @Param('id') moduleId: string,
-    @CurrentUser() userId: string,
     @Body() dto: CreateModuleFieldDto,
   ) {
-    return this.modulesService.addField(moduleId, userId, dto);
+    return this.modulesService.addField(moduleId, dto);
   }
 
   @Patch(':id/fields/:fieldId')
   updateField(
     @Param('id') moduleId: string,
     @Param('fieldId') fieldId: string,
-    @CurrentUser() userId: string,
     @Body() dto: UpdateModuleFieldDto,
   ) {
-    return this.modulesService.updateField(moduleId, fieldId, userId, dto);
+    return this.modulesService.updateField(moduleId, fieldId, dto);
   }
 
   @Delete(':id/fields/:fieldId')
   removeField(
     @Param('id') moduleId: string,
     @Param('fieldId') fieldId: string,
-    @CurrentUser() userId: string,
   ) {
-    return this.modulesService.removeField(moduleId, fieldId, userId);
+    return this.modulesService.removeField(moduleId, fieldId);
   }
 
   @Put(':id/fields/reorder')
   reorderFields(
     @Param('id') moduleId: string,
-    @CurrentUser() userId: string,
     @Body() dto: ReorderFieldsDto,
   ) {
-    return this.modulesService.reorderFields(moduleId, userId, dto.fieldIds);
+    return this.modulesService.reorderFields(moduleId, dto.fieldIds);
   }
 }

@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ApiKey } from '@prisma/client';
+import { ApiKey, Prisma } from '@prisma/client';
 
 @Injectable()
 export class DataService {
@@ -147,7 +147,7 @@ export class DataService {
     const cleanData = Object.fromEntries(Object.entries(data).filter(([k]) => knownFieldNames.has(k)));
 
     return this.prisma.moduleRecord.create({
-      data: { moduleId: module.id, data: cleanData },
+      data: { moduleId: module.id, data: cleanData as Prisma.InputJsonValue },
     });
   }
 
@@ -180,7 +180,7 @@ export class DataService {
     const existing = record.data as Record<string, unknown>;
     return this.prisma.moduleRecord.update({
       where: { id: recordId },
-      data: { data: { ...existing, ...allowedData } },
+      data: { data: { ...existing, ...allowedData } as Prisma.InputJsonValue },
     });
   }
 

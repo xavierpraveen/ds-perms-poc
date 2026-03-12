@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Steps, Card, Button, Space, Typography, Segmented, Spin } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import type { WizardState, CreateApiKeyDto, Environment } from '@dmds/types';
@@ -11,8 +10,8 @@ import FieldPermissions from './FieldPermissions';
 import { useModules } from '@/hooks/useModules';
 import { useCreateApiKey } from '@/hooks/useApiKeys';
 import KeyRevealModal from '../modals/KeyRevealModal';
-
-const { Title, Text } = Typography;
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const STEPS = ['Select Modules', 'Set Permissions', 'Field Access'];
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -75,79 +74,168 @@ export default function AccessConfigWizard() {
 
   return (
     <>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
-        <div style={{ marginBottom: 32 }}>
-          <Title level={3} style={{ margin: 0 }}>Create API Key</Title>
-          <Text type="secondary">Configure a new API key with module-level and field-level permissions</Text>
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold tracking-tight">Create API Key</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Configure a new API key with module-level and field-level permissions
+          </p>
         </div>
 
-        <Card style={{ marginBottom: 24 }}>
-          <Space direction="vertical" style={{ width: '100%' }} size={16}>
+        {/* Key name + environment card */}
+        <Card className="mb-6">
+          <CardContent className="pt-6 space-y-4">
             <div>
-              <Text strong style={{ display: 'block', marginBottom: 6 }}>Key Name</Text>
+              <label className="text-sm font-medium block mb-1.5">Key Name</label>
               <input
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                className="w-full px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="e.g. Mobile App Key, CI/CD Pipeline"
                 value={keyName}
                 onChange={(e) => setKeyName(e.target.value)}
               />
             </div>
             <div>
-              <Text strong style={{ display: 'block', marginBottom: 6 }}>Environment</Text>
-              <Segmented
-                value={environment}
-                onChange={(val) => setEnvironment(val as Environment)}
-                options={[{ label: '🟢 Production', value: 'PRODUCTION' }, { label: '🔵 Sandbox', value: 'SANDBOX' }]}
-              />
+              <label className="text-sm font-medium block mb-1.5">Environment</label>
+              <div className="inline-flex rounded-md border border-input bg-muted p-1 gap-1">
+                {(['PRODUCTION', 'SANDBOX'] as Environment[]).map((env) => (
+                  <button
+                    key={env}
+                    type="button"
+                    onClick={() => setEnvironment(env)}
+                    className={[
+                      'px-4 py-1.5 text-sm rounded-sm font-medium transition-colors',
+                      environment === env
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground',
+                    ].join(' ')}
+                  >
+                    {env === 'PRODUCTION' ? '🟢 Production' : '🔵 Sandbox'}
+                  </button>
+                ))}
+              </div>
             </div>
-          </Space>
+          </CardContent>
         </Card>
 
-        <Steps current={currentStep} items={STEPS.map((title) => ({ title }))} style={{ marginBottom: 24 }} />
+        {/* Step indicator */}
+        <div className="flex items-center mb-6">
+          {STEPS.map((label, idx) => (
+            <div key={label} className="flex items-center flex-1 last:flex-none">
+              <div className="flex items-center gap-2 shrink-0">
+                <div
+                  className={[
+                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors',
+                    idx < currentStep
+                      ? 'bg-primary text-primary-foreground'
+                      : idx === currentStep
+                        ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2'
+                        : 'bg-muted text-muted-foreground',
+                  ].join(' ')}
+                >
+                  {idx < currentStep ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    idx + 1
+                  )}
+                </div>
+                <span
+                  className={[
+                    'text-sm font-medium',
+                    idx === currentStep ? 'text-foreground' : 'text-muted-foreground',
+                  ].join(' ')}
+                >
+                  {label}
+                </span>
+              </div>
+              {idx < STEPS.length - 1 && (
+                <div className={['flex-1 h-px mx-3', idx < currentStep ? 'bg-primary' : 'bg-border'].join(' ')} />
+              )}
+            </div>
+          ))}
+        </div>
 
-        <Card style={{ minHeight: 400 }}>
-          {modulesLoading ? (
-            <div style={{ textAlign: 'center', padding: 80 }}><Spin /></div>
-          ) : (
-            <>
-              {currentStep === 0 && (
-                <ModuleSelector modules={modules} selectedIds={wizardState.selectedModuleIds}
-                  onChange={(ids) => setWizardState((s) => ({ ...s, selectedModuleIds: ids }))} />
-              )}
-              {currentStep === 1 && (
-                <PermissionMatrix modules={selectedModules} permissions={wizardState.modulePermissions}
-                  onChange={(perms) => setWizardState((s) => ({ ...s, modulePermissions: perms }))} />
-              )}
-              {currentStep === 2 && (
-                <FieldPermissions modules={selectedModules} modulePermissions={wizardState.modulePermissions}
-                  fieldPermissions={wizardState.fieldPermissions}
-                  onChange={(fp) => setWizardState((s) => ({ ...s, fieldPermissions: fp }))} />
-              )}
-            </>
-          )}
+        {/* Step content */}
+        <Card className="min-h-[400px]">
+          <CardContent className="pt-6">
+            {modulesLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <>
+                {currentStep === 0 && (
+                  <ModuleSelector
+                    modules={modules}
+                    selectedIds={wizardState.selectedModuleIds}
+                    onChange={(ids) => setWizardState((s) => ({ ...s, selectedModuleIds: ids }))}
+                  />
+                )}
+                {currentStep === 1 && (
+                  <PermissionMatrix
+                    modules={selectedModules}
+                    permissions={wizardState.modulePermissions}
+                    onChange={(perms) => setWizardState((s) => ({ ...s, modulePermissions: perms }))}
+                  />
+                )}
+                {currentStep === 2 && (
+                  <FieldPermissions
+                    modules={selectedModules}
+                    modulePermissions={wizardState.modulePermissions}
+                    fieldPermissions={wizardState.fieldPermissions}
+                    onChange={(fp) => setWizardState((s) => ({ ...s, fieldPermissions: fp }))}
+                  />
+                )}
+              </>
+            )}
+          </CardContent>
         </Card>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-          <Button onClick={() => router.back()} disabled={isSubmitting}>Cancel</Button>
-          <Space>
-            {currentStep > 0 && <Button onClick={() => setCurrentStep((s) => s - 1)} disabled={isSubmitting}>Previous</Button>}
+        {/* Navigation buttons */}
+        <div className="flex justify-between mt-4">
+          <Button variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <div className="flex gap-2">
+            {currentStep > 0 && (
+              <Button variant="outline" onClick={() => setCurrentStep((s) => s - 1)} disabled={isSubmitting}>
+                Previous
+              </Button>
+            )}
             {currentStep < STEPS.length - 1 ? (
-              <Button type="primary" onClick={() => setCurrentStep((s) => s + 1)}
-                disabled={currentStep === 0 && wizardState.selectedModuleIds.length === 0}>
+              <Button
+                onClick={() => setCurrentStep((s) => s + 1)}
+                disabled={currentStep === 0 && wizardState.selectedModuleIds.length === 0}
+              >
                 Next
               </Button>
             ) : (
-              <Button type="primary" onClick={handleCreateAndSave} loading={isSubmitting} disabled={!keyName.trim()}>
-                Create Key
+              <Button onClick={handleCreateAndSave} disabled={isSubmitting || !keyName.trim()}>
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    Creating...
+                  </span>
+                ) : (
+                  'Create Key'
+                )}
               </Button>
             )}
-          </Space>
+          </div>
         </div>
       </div>
 
       {createdKey && (
-        <KeyRevealModal open={!!createdKey} apiKey={createdKey} keyName={createdKeyName}
-          onClose={() => { setCreatedKey(null); router.push('/dashboard/keys'); }} />
+        <KeyRevealModal
+          open={!!createdKey}
+          apiKey={createdKey}
+          keyName={createdKeyName}
+          onClose={() => {
+            setCreatedKey(null);
+            router.push('/dashboard/keys');
+          }}
+        />
       )}
     </>
   );

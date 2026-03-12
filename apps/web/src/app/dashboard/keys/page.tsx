@@ -1,12 +1,11 @@
 'use client';
 
-import { Button, Typography, Space, Spin, Empty, Alert } from 'antd';
-import { PlusOutlined, KeyOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import { Plus, Key } from 'lucide-react';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import KeysTable from '@/components/api-keys/KeysTable';
-
-const { Title, Text } = Typography;
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function KeysDashboard() {
   const router = useRouter();
@@ -14,51 +13,44 @@ export default function KeysDashboard() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Space direction="vertical" size={0}>
-          <Title level={3} style={{ margin: 0 }}>
-            <KeyOutlined style={{ marginRight: 8, color: '#1677ff' }} />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-2xl font-semibold flex items-center gap-2">
+            <Key className="h-6 w-6 text-blue-500" />
             API Credentials
-          </Title>
-          <Text type="secondary">Manage API keys and their module access permissions</Text>
-        </Space>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          size="large"
-          onClick={() => router.push('/dashboard/keys/new')}
-        >
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Manage API keys and their module access permissions
+          </p>
+        </div>
+        <Button onClick={() => router.push('/dashboard/keys/new')} size="lg">
+          <Plus className="h-4 w-4 mr-2" />
           Create New Key
         </Button>
       </div>
 
       {error && (
-        <Alert
-          type="error"
-          message="Failed to load API keys"
-          description={(error as Error).message}
-          style={{ marginBottom: 16 }}
-        />
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Failed to load API keys</AlertTitle>
+          <AlertDescription>{(error as Error).message}</AlertDescription>
+        </Alert>
       )}
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 80 }}>
-          <Spin size="large" />
+        <div className="flex items-center justify-center py-20">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
         </div>
       ) : !keys?.length ? (
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={
-            <Space direction="vertical" align="center">
-              <Text>No API keys yet</Text>
-              <Text type="secondary">Create your first key to start accessing your dynamic modules</Text>
-            </Space>
-          }
-        >
-          <Button type="primary" onClick={() => router.push('/dashboard/keys/new')}>
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Key className="h-12 w-12 text-muted-foreground/40" />
+          <p className="text-base font-medium">No API keys yet</p>
+          <p className="text-sm text-muted-foreground">
+            Create your first key to start accessing your dynamic modules
+          </p>
+          <Button onClick={() => router.push('/dashboard/keys/new')} className="mt-2">
             Create your first key
           </Button>
-        </Empty>
+        </div>
       ) : (
         <KeysTable keys={keys} />
       )}
