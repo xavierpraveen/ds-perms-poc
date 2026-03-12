@@ -5,15 +5,15 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ApiKey, Prisma } from '@prisma/client';
+import { ApiKey, Prisma } from '../generated/prisma';
 
 @Injectable()
 export class DataService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async resolveModule(slug: string, userId: string) {
+  private async resolveModule(slug: string) {
     const module = await this.prisma.module.findFirst({
-      where: { slug, userId },
+      where: { slug },
       include: { fields: { orderBy: { order: 'asc' } } },
     });
     if (!module) throw new NotFoundException(`Module '${slug}' not found`);
@@ -64,7 +64,7 @@ export class DataService {
   }
 
   async listRecords(apiKey: ApiKey, slug: string, limit = 20, offset = 0) {
-    const module = await this.resolveModule(slug, apiKey.userId);
+    const module = await this.resolveModule(slug);
     const { modulePerm, fieldPerms } = await this.getPermissions(apiKey.id, module.id);
 
     if (!modulePerm?.canRead) {
@@ -101,7 +101,7 @@ export class DataService {
   }
 
   async getRecord(apiKey: ApiKey, slug: string, recordId: string) {
-    const module = await this.resolveModule(slug, apiKey.userId);
+    const module = await this.resolveModule(slug);
     const { modulePerm, fieldPerms } = await this.getPermissions(apiKey.id, module.id);
 
     if (!modulePerm?.canRead) {
@@ -126,7 +126,7 @@ export class DataService {
   }
 
   async createRecord(apiKey: ApiKey, slug: string, data: Record<string, unknown>) {
-    const module = await this.resolveModule(slug, apiKey.userId);
+    const module = await this.resolveModule(slug);
     const { modulePerm } = await this.getPermissions(apiKey.id, module.id);
 
     if (!modulePerm?.canCreate) {
@@ -157,7 +157,7 @@ export class DataService {
     recordId: string,
     data: Record<string, unknown>,
   ) {
-    const module = await this.resolveModule(slug, apiKey.userId);
+    const module = await this.resolveModule(slug);
     const { modulePerm, fieldPerms } = await this.getPermissions(apiKey.id, module.id);
 
     if (!modulePerm?.canUpdate) {
@@ -185,7 +185,7 @@ export class DataService {
   }
 
   async deleteRecord(apiKey: ApiKey, slug: string, recordId: string) {
-    const module = await this.resolveModule(slug, apiKey.userId);
+    const module = await this.resolveModule(slug);
     const { modulePerm } = await this.getPermissions(apiKey.id, module.id);
 
     if (!modulePerm?.canDelete) {

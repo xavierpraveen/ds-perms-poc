@@ -4,14 +4,25 @@ A full-stack API key management platform that lets you create user-defined data 
 
 ---
 
+## Live Deployments
+
+| App | URL |
+|-----|-----|
+| **Dashboard (Next.js)** | https://web-six-fawn-34.vercel.app |
+| **API (NestJS)** | https://dmds-api.vercel.app |
+
+> Both deployments are on Vercel. The API is a serverless NestJS function; the web app is a standard Next.js deployment with Clerk authentication.
+
+---
+
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Browser                                                    │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │  Next.js 15  (apps/web  :3000)                         │ │
-│  │  Ant Design · TanStack Query · Clerk (session cookie)  │ │
+│  │  Next.js 16  (apps/web  :3000)                         │ │
+│  │  shadcn/ui · Radix UI · TanStack Query · Clerk         │ │
 │  └────────────────┬───────────────────────────────────────┘ │
 └───────────────────│─────────────────────────────────────────┘
                     │ Authorization: Bearer <clerk-jwt>
@@ -40,14 +51,15 @@ A full-stack API key management platform that lets you create user-defined data 
 | Layer | Technology |
 |-------|-----------|
 | Monorepo | [Turborepo](https://turbo.build) + pnpm workspaces |
-| Frontend | Next.js 15 (App Router), React 19 |
-| UI | Ant Design 5, Tailwind CSS |
+| Frontend | Next.js 16.1.6 (App Router), React 19 |
+| UI | shadcn/ui, Radix UI, Tailwind CSS |
 | Data fetching | TanStack Query v5 |
 | Backend | NestJS 10 |
 | ORM | Prisma 5 |
 | Database | PostgreSQL via [Supabase](https://supabase.com) |
 | Auth | [Clerk](https://clerk.com) (dashboard) + SHA256-hashed API keys (external) |
-| Shared types | `packages/types` (`@dmds/types`) |
+| Deployment | [Vercel](https://vercel.com) (both apps) |
+| Types | Inlined in `apps/web/src/types/` (no workspace dep needed for web) |
 
 ---
 
@@ -116,17 +128,17 @@ All external data access uses your `dmds_live_*` or `dmds_sandbox_*` API key.
 ```bash
 # List records (GET)
 curl -H "Authorization: Bearer dmds_live_<your-key>" \
-  http://localhost:3001/api/data/customers
+  https://dmds-api.vercel.app/api/data/customers
 
 # Create a record (POST)
 curl -X POST \
   -H "Authorization: Bearer dmds_live_<your-key>" \
   -H "Content-Type: application/json" \
   -d '{"name": "Alice", "email": "alice@example.com", "tier": "gold"}' \
-  http://localhost:3001/api/data/customers
+  https://dmds-api.vercel.app/api/data/customers
 
 # Pagination
-curl "http://localhost:3001/api/data/customers?limit=10&offset=0" \
+curl "https://dmds-api.vercel.app/api/data/customers?limit=10&offset=0" \
   -H "Authorization: Bearer dmds_live_<your-key>"
 ```
 
@@ -141,27 +153,40 @@ curl "http://localhost:3001/api/data/customers?limit=10&offset=0" \
 
 ---
 
+## Modules are Global
+
+Modules are **shared across all authenticated users** — not scoped per-user. This means:
+- All 15 seeded modules are visible to every signed-in user
+- Creating a new module makes it available to all users
+- The `userId` field on modules records who created it (for audit purposes only)
+
+---
+
 ## Workspace Layout
 
 ```
 dynamic-module-data-system/
 ├── apps/
-│   ├── api/               NestJS backend
+│   ├── api/               NestJS backend (deployed as Vercel serverless function)
+│   │   ├── api/
+│   │   │   └── index.ts   Vercel serverless handler (lazy async bootstrap)
 │   │   ├── src/
 │   │   │   ├── auth/      ClerkGuard, ApiKeyGuard
 │   │   │   ├── api-keys/  Key CRUD, permissions, sparkline
 │   │   │   ├── modules/   Dynamic module + field management
 │   │   │   ├── data/      External data CRUD (API key auth)
 │   │   │   └── logs/      Request log queries
-│   │   └── prisma/        schema.prisma, migrations, seed.ts
-│   └── web/               Next.js frontend
+│   │   ├── prisma/        schema.prisma, migrations, seed.ts
+│   │   └── vercel.json    Vercel routing config (rewrites all to api/index.ts)
+│   └── web/               Next.js frontend (deployed to Vercel)
 │       └── src/
 │           ├── app/       App Router pages
 │           ├── components/ UI components by feature
 │           ├── hooks/     TanStack Query hooks
-│           └── lib/       api-client.ts, query-client.ts
+│           ├── lib/       api-client.ts, query-client.ts
+│           └── types/     Inlined @dmds/types (no workspace:* dep)
 └── packages/
-    └── types/             @dmds/types — shared DTOs & enums
+    └── types/             @dmds/types — shared DTOs & enums (used by API only)
 ```
 
 ---
@@ -174,7 +199,7 @@ customers · products · orders · inventory · employees · invoices · support
 
 Sensitive fields (credit_score, salary, ssn_last4, deal_value, card_last4, mrr) are flagged in the schema and visible in the wizard UI.
 
-> **Note:** The seed user ID (`user_seed_demo_001`) is not a Clerk user. Sign in with a real Clerk account to use the dashboard — your account is auto-created on first login and will have its own empty module list.
+> **Note:** The seed user ID (`user_seed_demo_001`) is not a Clerk user. Sign in with a real Clerk account to use the dashboard. Since modules are global, the seeded modules will appear for all authenticated users.
 
 ---
 

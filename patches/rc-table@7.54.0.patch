@@ -1,0 +1,26 @@
+diff --git a/es/hooks/useRenderTimes.js b/es/hooks/useRenderTimes.js
+index 85651e5c06dd1bb0f8f191d78934f7e5f1287769..6cf08eee9e75244e690ee66dbd0da5aef69f04e1 100644
+--- a/es/hooks/useRenderTimes.js
++++ b/es/hooks/useRenderTimes.js
+@@ -28,7 +28,7 @@ function useRenderTimes(props, debug) {
+   }
+   return timesRef.current;
+ }
+-export default process.env.NODE_ENV !== 'production' ? useRenderTimes : function () {};
++export default useRenderTimes;
+ export var RenderBlock = /*#__PURE__*/React.memo(function () {
+   var times = useRenderTimes();
+   return /*#__PURE__*/React.createElement("h1", null, "Render Times: ", times);
+diff --git a/lib/hooks/useRenderTimes.js b/lib/hooks/useRenderTimes.js
+index 6ec03a4bbbef636d4f70acbc3017511f1fcad840..1e8b93793c701e338ba4c5220abec4d61654b7d8 100644
+--- a/lib/hooks/useRenderTimes.js
++++ b/lib/hooks/useRenderTimes.js
+@@ -38,7 +38,7 @@ function useRenderTimes(props, debug) {
+   }
+   return timesRef.current;
+ }
+-var _default = exports.default = process.env.NODE_ENV !== 'production' ? useRenderTimes : function () {};
++var _default = exports.default = useRenderTimes;
+ var RenderBlock = exports.RenderBlock = /*#__PURE__*/React.memo(function () {
+   var times = useRenderTimes();
+   return /*#__PURE__*/React.createElement("h1", null, "Render Times: ", times);
