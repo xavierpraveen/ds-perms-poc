@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ApiKey, Prisma } from '@prisma/client';
+import { ApiKey, Prisma } from '../generated/prisma';
 
 @Injectable()
 export class DataService {

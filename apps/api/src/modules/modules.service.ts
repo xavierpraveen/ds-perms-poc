@@ -4,7 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateModuleDto, CreateModuleFieldDto } from './dto/create-module.dto';
 import { UpdateModuleDto, UpdateModuleFieldDto } from './dto/update-module.dto';

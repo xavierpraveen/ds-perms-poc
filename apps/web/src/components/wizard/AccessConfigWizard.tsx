@@ -5,15 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import type { WizardState, CreateApiKeyDto, Environment } from '@dmds/types';
 import ModuleSelector from './ModuleSelector';
-import PermissionMatrix from './PermissionMatrix';
-import FieldPermissions from './FieldPermissions';
+import ModuleAccessConfig from './ModuleAccessConfig';
 import { useModules } from '@/hooks/useModules';
 import { useCreateApiKey } from '@/hooks/useApiKeys';
 import KeyRevealModal from '../modals/KeyRevealModal';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-const STEPS = ['Select Modules', 'Set Permissions', 'Field Access'];
+const STEPS = ['Select Modules', 'Configure Access'];
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export default function AccessConfigWizard() {
@@ -157,7 +156,7 @@ export default function AccessConfigWizard() {
         </div>
 
         {/* Step content */}
-        <Card className="min-h-[400px]">
+        <Card className="min-h-[320px]">
           <CardContent className="pt-6">
             {modulesLoading ? (
               <div className="flex items-center justify-center py-20">
@@ -173,18 +172,12 @@ export default function AccessConfigWizard() {
                   />
                 )}
                 {currentStep === 1 && (
-                  <PermissionMatrix
-                    modules={selectedModules}
-                    permissions={wizardState.modulePermissions}
-                    onChange={(perms) => setWizardState((s) => ({ ...s, modulePermissions: perms }))}
-                  />
-                )}
-                {currentStep === 2 && (
-                  <FieldPermissions
+                  <ModuleAccessConfig
                     modules={selectedModules}
                     modulePermissions={wizardState.modulePermissions}
                     fieldPermissions={wizardState.fieldPermissions}
-                    onChange={(fp) => setWizardState((s) => ({ ...s, fieldPermissions: fp }))}
+                    onModulePermChange={(perms) => setWizardState((s) => ({ ...s, modulePermissions: perms }))}
+                    onFieldPermChange={(fp) => setWizardState((s) => ({ ...s, fieldPermissions: fp }))}
                   />
                 )}
               </>

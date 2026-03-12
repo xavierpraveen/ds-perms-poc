@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ApiKey, Prisma } from '@prisma/client';
+import { ApiKey, Prisma } from '../../generated/prisma';
 
 @Injectable()
 export class RequestLoggerInterceptor implements NestInterceptor {

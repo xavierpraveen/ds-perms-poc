@@ -15,7 +15,7 @@ import { Request } from 'express';
 import { ApiKeyGuard } from '../auth/api-key.guard';
 import { DataService } from './data.service';
 import { RequestLoggerInterceptor } from '../common/interceptors/request-logger.interceptor';
-import { ApiKey } from '@prisma/client';
+import { ApiKey } from '../generated/prisma';
 
 // Extend Request to include apiKey
 interface AuthedRequest extends Request {
